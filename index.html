@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>山工职院 · 新生问答助手</title>
+  <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #3b6ef0;
+      --blue-light: #e8efff;
+      --blue-dark: #2a56c8;
+      --bg: #f3f5f9;
+      --surface: #ffffff;
+      --border: #eef0f4;
+      --text: #1f2329;
+      --text-2: #4a5160;
+      --muted: #8a93a3;
+      --shadow: 0 4px 24px rgba(31,35,41,.08);
+      --radius: 16px;
+      --sidebar-w: 280px;
+    }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, "PingFang SC", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.6;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: transform .3s;
+    }
+    .sidebar-head {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar-logo span { font-size: 20px; }
+    .sidebar-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .sidebar-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: 16px 20px 6px;
+    }
+    .cat-list { flex: 1; overflow-y: auto; }
+    .cat-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-2);
+      border-left: 3px solid transparent;
+      transition: all .15s;
+    }
+    .cat-item:hover { background: var(--bg); color: var(--text); }
+    .cat-item.active { background: var(--blue-light); color: var(--blue); border-left-color: var(--blue); font-weight: 600; }
+    .cat-count { font-size: 11px; background: var(--bg); color: var(--muted); border-radius: 10px; padding: 1px 8px; }
+    .cat-item.active .cat-count { background: var(--blue); color: #fff; }
+    .sidebar-bottom {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ===== MAIN AREA ===== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+    }
+
+    /* ===== TOP BAR ===== */
+    .topbar {
+      height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .menu-btn {
+      display: none;
+      width: 36px; height: 36px;
+      border: none; background: none;
+      cursor: pointer;
+      font-size: 20px;
+      border-radius: 8px;
+      color: var(--text-2);
+    }
+    .menu-btn:hover { background: var(--bg); }
+    .topbar-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+    }
+    .topbar-actions { display: flex; gap: 8px; }
+    .topbar-btn {
+      height: 32px; padding: 0 14px;
+      border: 1px solid var(--border); background: var(--surface);
+      border-radius: 8px; cursor: pointer;
+      font-size: 13px; color: var(--text-2);
+      display: flex; align-items: center; gap: 4px;
+      transition: all .15s;
+    }
+    .topbar-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ===== CHAT AREA ===== */
+    .chat-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px 100px;
+      scroll-behavior: smooth;
+    }
+
+    /* Welcome */
+    .welcome-card {
+      max-width: 640px;
+      margin: 0 auto 8px;
+      text-align: center;
+      padding: 48px 20px 32px;
+    }
+    .welcome-emoji { font-size: 56px; margin-bottom: 16px; }
+    .welcome-title { font-size: 22px; font-weight: 700; color: var(--text); }
+    .welcome-sub { font-size: 14px; color: var(--muted); margin-top: 8px; }
+
+    /* Suggestions */
+    .suggestions {
+      max-width: 640px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .sug-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 13px;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .sug-btn:hover { border-color: var(--blue); color: var(--blue); transform: translateY(-1px); box-shadow: var(--shadow); }
+    .sug-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* Messages */
+    .msg { max-width: 640px; margin: 0 auto 24px; display: flex; flex-direction: column; gap: 8px; }
+    .msg-user { align-items: flex-end; }
+    .msg-bot { align-items: flex-start; }
+    .bubble {
+      max-width: 85%;
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 15px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bubble-user {
+      background: var(--blue);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .bubble-bot {
+      background: var(--surface);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    }
+    .msg-time { font-size: 11px; color: var(--muted); padding: 0 4px; }
+
+    /* Sources */
+    .sources {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 6px;
+      font-size: 13px;
+    }
+    .sources-title { color: var(--muted); font-size: 11px; font-weight: 600; margin-bottom: 8px; }
+    .source-item {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--blue); cursor: pointer;
+      padding: 4px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .source-item:last-child { border-bottom: none; }
+    .source-item:hover { color: var(--blue-dark); }
+    .src-dot { color: var(--blue); font-size: 16px; line-height: 1; }
+
+    /* Loading dots */
+    .typing { display: flex; gap: 5px; padding: 4px 0; }
+    .dot {
+      width: 7px; height: 7px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: .2s; }
+    .dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+    /* ===== INPUT BAR ===== */
+    .input-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 12px 20px 20px;
+      background: linear-gradient(to top, var(--bg) 70%, transparent);
+    }
+    .input-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 8px 8px 8px 18px;
+      box-shadow: 0 4px 20px rgba(31,35,41,.08);
+      transition: border-color .2s;
+    }
+    .input-inner:focus-within { border-color: var(--blue); }
+    .chat-input {
+      flex: 1;
+      border: none; outline: none;
+      font-size: 15px;
+      line-height: 1.5;
+      resize: none;
+      background: transparent;
+      color: var(--text);
+      max-height: 120px;
+      font-family: inherit;
+    }
+    .chat-input::placeholder { color: var(--muted); }
+    .send-btn {
+      width: 40px; height: 40px;
+      border: none; border-radius: 50%;
+      background: var(--blue); color: #fff;
+      cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s, transform .1s;
+    }
+    .send-btn:hover { background: var(--blue-dark); transform: scale(1.05); }
+    .send-btn:active { transform: scale(.95); }
+    .send-btn:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
+
+    /* ===== FAQ LIST PANEL (overlay) ===== */
+    .faq-panel {
+      position: fixed; inset: 0;
+      background: var(--surface);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+    }
+    .faq-panel.show { display: flex; }
+    .faq-panel-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      flex-shrink: 0;
+    }
+    .faq-back {
+      width: 36px; height: 36px; border: none;
+      background: var(--bg); border-radius: 8px;
+      cursor: pointer; font-size: 18px;
+    }
+    .faq-panel-title { font-size: 16px; font-weight: 600; }
+    .faq-search {
+      margin: 16px 20px;
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .faq-search input {
+      flex: 1; border: none; outline: none;
+      background: transparent; font-size: 14px;
+      color: var(--text); font-family: inherit;
+    }
+    .faq-search input::placeholder { color: var(--muted); }
+    .faq-list { flex: 1; overflow-y: auto; padding: 0 20px 20px; }
+    .faq-item {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .faq-item:hover .faq-q { color: var(--blue); }
+    .faq-q { font-size: 15px; font-weight: 600; color: var(--text); transition: color .15s; }
+    .faq-a { font-size: 13px; color: var(--muted); margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .faq-cat { display: inline-block; font-size: 11px; background: var(--blue-light); color: var(--blue); border-radius: 6px; padding: 2px 8px; margin-top: 8px; }
+
+    /* ===== ADMIN PANEL ===== */
+    .admin-panel {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 200;
+      display: none;
+      align-items: center; justify-content: center;
+    }
+    .admin-panel.show { display: flex; }
+    .admin-box {
+      background: var(--surface);
+      border-radius: var(--radius);
+      width: 90%; max-width: 480px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .admin-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .admin-head h3 { font-size: 16px; }
+    .admin-close {
+      width: 32px; height: 32px; border: none;
+      background: var(--bg); border-radius: 8px;
+      cursor: pointer; font-size: 16px;
+    }
+    .admin-body { padding: 20px; overflow-y: auto; flex: 1; }
+    .admin-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .admin-tab {
+      padding: 6px 16px; border: 1px solid var(--border);
+      border-radius: 20px; cursor: pointer;
+      font-size: 13px; color: var(--text-2);
+      background: var(--surface);
+    }
+    .admin-tab.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 13px; color: var(--text-2); font-weight: 600; display: block; margin-bottom: 6px; }
+    .form-input, .form-textarea, .form-select {
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 14px;
+      font-family: inherit; color: var(--text);
+      background: var(--surface);
+      outline: none;
+    }
+    .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--blue); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .btn-primary {
+      background: var(--blue); color: #fff;
+      border: none; border-radius: 10px;
+      padding: 10px 24px; cursor: pointer;
+      font-size: 14px; font-weight: 600;
+      width: 100%;
+    }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-secondary {
+      background: var(--bg); color: var(--text-2);
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px 18px; cursor: pointer; font-size: 13px;
+    }
+    .admin-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat-card { background: var(--bg); border-radius: 12px; padding: 16px; text-align: center; }
+    .stat-num { font-size: 28px; font-weight: 700; color: var(--blue); }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .admin-faq-list { max-height: 300px; overflow-y: auto; margin-top: 16px; }
+    .admin-faq-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 8px; }
+    .admin-faq-item:last-child { border-bottom: none; }
+    .admin-faq-q { font-size: 13px; font-weight: 600; flex: 1; }
+    .admin-faq-del { background: #fee; color: #e55; border: 1px solid #fcc; border-radius: 6px; padding: 2px 8px; cursor: pointer; font-size: 12px; flex-shrink: 0; }
+    .toast {
+      position: fixed; bottom: 80px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--text); color: #fff;
+      padding: 10px 20px; border-radius: 20px;
+      font-size: 14px; z-index: 999;
+      opacity: 0; transition: opacity .3s;
+      pointer-events: none;
+    }
+    /* ===== SHARE MODAL ===== */
+    .share-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 300;
+      align-items: center; justify-content: center;
+    }
+    .share-modal.show { display: flex; }
+    .share-box {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 90%; max-width: 380px;
+      text-align: center;
+    }
+    .share-head {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 16px; font-weight: 700; margin-bottom: 16px;
+    }
+    .share-close {
+      width: 28px; height: 28px;
+      border: none; background: var(--bg); border-radius: 8px;
+      cursor: pointer; font-size: 14px;
+    }
+    .share-url-row {
+      display: flex; gap: 8px; margin-bottom: 16px;
+    }
+    .share-url-input {
+      flex: 1; padding: 10px 14px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 13px; color: var(--muted);
+      background: var(--bg); outline: none;
+      font-family: monospace;
+    }
+    .share-copy-btn {
+      padding: 10px 18px;
+      background: var(--blue); color: #fff;
+      border: none; border-radius: 10px;
+      cursor: pointer; font-size: 14px; font-weight: 600;
+      white-space: nowrap;
+    }
+    .share-copy-btn:hover { background: var(--blue-dark); }
+    .share-qr {
+      display: flex; justify-content: center;
+      margin: 8px 0;
+    }
+    .share-qr canvas, .share-qr img { border-radius: 12px !important; }
+    .share-tip { font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+    .toast.show { opacity: 1; }
+
+    /* ===== WECHAT POPUP ===== */
+    .wechat-popup {
+      display: none;
+      position: fixed; inset: 0;
+      z-index: 500;
+      align-items: center; justify-content: center;
+    }
+    .wechat-popup.show { display: flex; }
+
+    /* ===== 浮动联系按钮 ===== */
+    .contact-fab {
+      position: fixed; right: 18px; bottom: 90px;
+      z-index: 300;
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 16px 10px 12px;
+      background: linear-gradient(135deg, #07c160, #00a854);
+      color: #fff; border-radius: 999px;
+      font-size: 14px; font-weight: 600;
+      box-shadow: 0 4px 16px rgba(7,193,96,.4);
+      cursor: pointer;
+      transition: all .25s;
+      animation: fabPulse 2.5s infinite;
+    }
+    .contact-fab:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 6px 20px rgba(7,193,96,.55);
+    }
+    .contact-fab-text { white-space: nowrap; }
+    @keyframes fabPulse {
+      0%, 100% { box-shadow: 0 4px 16px rgba(7,193,96,.4); }
+      50% { box-shadow: 0 4px 16px rgba(7,193,96,.4), 0 0 0 8px rgba(7,193,96,.15); }
+    }
+    .wechat-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(4px);
+    }
+    .wechat-card {
+      position: relative;
+      background: #fff;
+      border-radius: 24px;
+      padding: 36px 32px 28px;
+      width: 300px;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,.2);
+      animation: popIn .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes popIn {
+      from { transform: scale(.7); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .wechat-close {
+      position: absolute; top: 12px; right: 12px;
+      width: 28px; height: 28px;
+      border: none; background: #f5f5f5; border-radius: 50%;
+      cursor: pointer; font-size: 13px; color: #888;
+    }
+    .wechat-emoji { font-size: 40px; margin-bottom: 12px; }
+    .wechat-title {
+      font-size: 19px; font-weight: 700; color: #1f2329;
+      margin-bottom: 6px;
+    }
+    .wechat-sub {
+      font-size: 13px; color: #8a93a3; margin-bottom: 20px;
+    }
+    .wechat-qr-wrap {
+      background: #f8f9fb;
+      border-radius: 16px;
+      padding: 12px;
+      display: inline-block;
+      margin-bottom: 14px;
+    }
+    .wechat-qr {
+      width: 180px; height: 180px;
+      object-fit: cover;
+      border-radius: 8px;
+      display: block;
+    }
+    .wechat-tip {
+      font-size: 12px; color: #b0b5c0;
+    }
+
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; z-index: 50; transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 49; }
+      .sidebar.open + .sidebar-overlay { display: block; }
+      .menu-btn { display: flex; align-items: center; justify-content: center; }
+      .suggestions { grid-template-columns: 1fr; }
+      .bubble { max-width: 95%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <div class="sidebar-logo"><span>🎓</span> 山工职院新生问答</div>
+    <div class="sidebar-sub">山东工业职业学院 · 智能助手</div>
+  </div>
+  <div class="cat-list" id="catList"></div>
+  <div class="sidebar-bottom">内容以学校官方通知为准</div>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn">☰</button>
+    <div class="topbar-title" id="topbarTitle">新生智能问答助手</div>
+    <div class="topbar-actions">
+      <button class="topbar-btn" onclick="openShare()">🔗 分享</button>
+      <button class="topbar-btn" onclick="openFaqPanel()">📋 问题列表</button>
+      <button class="topbar-btn" onclick="openAdmin()">⚙️ 管理</button>
+    </div>
+  </header>
+
+  <div class="chat-wrap" id="chatWrap">
+    <div id="chatContent"></div>
+  </div>
+
+  <div class="input-bar">
+    <div class="input-inner">
+      <textarea class="chat-input" id="chatInput" rows="1" placeholder="输入你的问题，回车发送…" onkeydown="onKeydown(event)" oninput="autoGrow(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="send()">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ List Panel -->
+<div class="faq-panel" id="faqPanel">
+  <div class="faq-panel-head">
+    <button class="faq-back" onclick="closeFaqPanel()">←</button>
+    <div class="faq-panel-title">问题列表</div>
+  </div>
+  <div class="faq-search">
+    🔍 <input id="faqSearchInput" placeholder="搜索问题…" oninput="filterFaqList()" />
+  </div>
+  <div class="faq-list" id="faqList"></div>
+</div>
+
+<!-- Admin Panel -->
+<div class="admin-panel" id="adminPanel">
+  <div class="admin-box">
+    <div class="admin-head">
+      <h3>⚙️ 管理后台</h3>
+      <button class="admin-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="admin-body">
+      <div class="admin-stats" id="adminStats"></div>
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchAdminTab('faq')">查看FAQ</button>
+        <button class="admin-tab" onclick="switchAdminTab('add')">添加FAQ</button>
+        <button class="admin-tab" onclick="switchAdminTab('import')">批量导入</button>
+      </div>
+      <div id="adminFaqTab"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 浮动联系按钮 -->
+<div class="contact-fab" id="contactFab" onclick="showWechatPopup()" title="加学长微信">
+  💬<span class="contact-fab-text">联系学长</span>
+</div>
+
+<!-- WeChat QR Popup -->
+<div class="wechat-popup" id="wechatPopup">
+  <div class="wechat-overlay" onclick="closeWechatPopup()"></div>
+  <div class="wechat-card">
+    <button class="wechat-close" onclick="closeWechatPopup()">✕</button>
+    <div class="wechat-emoji">💬</div>
+    <div class="wechat-title">有任何问题加学长微信</div>
+    <div class="wechat-sub">扫码添加，快速答疑</div>
+    <div class="wechat-qr-wrap">
+      <img class="wechat-qr" id="wechatQrImg" src="wechat-qr.jpg" alt="微信二维码" />
+    </div>
+    <div class="wechat-tip">长按识别 · 备注「新生」更快通过</div>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div class="share-modal" id="shareModal">
+  <div class="share-box">
+    <div class="share-head">
+      <span>🔗 分享给同学</span>
+      <button class="share-close" onclick="closeShare()">✕</button>
+    </div>
+    <div class="share-url-row">
+      <input class="share-url-input" id="shareUrl" readonly />
+      <button class="share-copy-btn" onclick="copyUrl()">复制</button>
+    </div>
+    <div class="share-qr" id="shareQr"></div>
+    <div class="share-tip">📱 微信/浏览器扫码直接打开</div>
+  </div>
+</div>
+
+<script>
+/* ================================================
+   FAQ DATA — 在这里修改问答内容
+   每条格式：{ question, answer, category, tags, keywords }
+   ================================================ */
+const FAQ_DATA = [
+  {
+    question: "新生报到注册需要带哪些材料？",
+    answer: "需要带录取通知书、身份证、档案等。",
+    category: "报到注册", tags: ["报到","注册","材料","入学"], keywords: ["材料","通知书","身份证","档案"]
+  },
+  {
+    question: "新生报到要带什么？",
+    answer: "需要带录取通知书、身份证、档案等。",
+    category: "报到注册", tags: ["报到","注册","材料","入学"], keywords: ["材料","通知书","身份证","档案"]
+  },
+  {
+    question: "宿舍几个人一间？",
+    answer: "6人间。",
+    category: "宿舍生活", tags: ["宿舍","寝室","床位"], keywords: ["宿舍","寝室","几人间","床位","住宿"]
+  },
+  {
+    question: "学费怎么交？什么时候交？",
+    answer: "学费、住宿费一般随录取通知书附带的银行卡批量代扣，也可通过学校财务处公众号或缴费平台在线缴纳。缴费时间通常为报到前一周至报到当天，请及时关注录取通知书和班级群通知。",
+    category: "学费缴费", tags: ["学费","住宿费","缴费"], keywords: ["学费","住宿费","缴费","交费","多少钱"]
+  },
+  {
+    question: "新生军训一般多久？要准备什么？",
+    answer: "军训通常安排在入学后 2-3 周，具体时长以学校当年安排为准。建议准备舒适的运动鞋、防晒用品、水杯、藿香正气水等防暑物品，身体不适请及时报告教官和辅导员。",
+    category: "军训", tags: ["军训","训练","防晒"], keywords: ["军训","几天","多久","训练","防晒"]
+  },
+  {
+    question: "入学后可以申请转专业吗？",
+    answer: "一般在大一学年内符合条件可申请转专业，具体名额、条件和流程以学校教务处当年发布的转专业通知为准，通常需通过考核或面试。建议入学后关注教务处官网和辅导员通知。",
+    category: "转专业", tags: ["转专业","换专业"], keywords: ["转专业","换专业","转系"]
+  },
+  {
+    question: "学校有哪些奖助学金？怎么申请？",
+    answer: "常见有国家奖学金、国家励志奖学金、国家助学金、校内奖学金及各类社会资助。助学金一般入学后通过家庭困难认定申请，奖学金按学业成绩评定。具体标准和申请时间以学校学生资助管理中心通知为准。",
+    category: "奖助学金", tags: ["奖学金","助学金","资助"], keywords: ["奖学金","助学金","资助","贫困","贷款"]
+  },
+  {
+    question: "校园卡怎么办理？丢了怎么办？",
+    answer: "校园卡（一卡通）一般在报到时由学院统一发放，用于就餐、门禁、图书借阅等。遗失后请尽快在食堂/宿舍楼的自助补卡机或一卡通中心挂失补办，避免余额损失。",
+    category: "校园卡", tags: ["校园卡","一卡通","补卡"], keywords: ["校园卡","一卡通","丢卡","补卡","挂失"]
+  },
+  {
+    question: "学校地址在哪？怎么去？",
+    answer: "学校位于山东省淄博市桓台县（具体校区地址以录取通知书为准）。可乘高铁/火车至淄博站或淄博北站，再转乘公交或打车前往；自驾可直接导航学校全称。新生报到日学校通常在车站设有接站服务。",
+    category: "交通出行", tags: ["地址","交通","路线","接站"], keywords: ["地址","在哪","怎么去","路线","高铁","接站"]
+  },
+  {
+    question: "食堂怎么样？饭菜贵吗？",
+    answer: "学校有多个学生食堂，提供家常菜、面食、小吃等，价格亲民，一般一餐 8-15 元。食堂支持校园卡和移动支付。如有清真或特殊饮食需求，可咨询食堂窗口。",
+    category: "食堂餐饮", tags: ["食堂","吃饭","餐饮"], keywords: ["食堂","吃饭","餐饮","饭菜","贵吗"]
+  },
+  {
+    question: "校园网怎么连？流量够用吗？",
+    answer: "校园内覆盖校园 Wi-Fi，新生入学后可凭学号和初始密码登录（账号开通方式见入学指南或信息化中心通知）。宿舍一般也提供有线网络接口，运营商宽带可自行办理。",
+    category: "校园网", tags: ["校园网","wifi","网络"], keywords: ["校园网","wifi","上网","网络","流量"]
+  },
+  {
+    question: "有哪些社团可以加入？",
+    answer: "学校有学生会、团委、各类兴趣社团（文学、音乐、体育、志愿者等）。新生军训后通常会有社团招新（百团大战），可现场了解并报名，建议结合兴趣适度参与。",
+    category: "社团活动", tags: ["社团","学生会","招新"], keywords: ["社团","学生会","招新","活动","加入"]
+  },
+  {
+    question: "图书馆怎么借阅图书？",
+    answer: "凭校园卡即可在图书馆借还图书，具体可借册数和借期以图书馆规定为准。图书馆通常提供自习室、电子资源数据库，刷校园卡入馆。相关规则可在图书馆官网或入馆处查看。",
+    category: "图书馆", tags: ["图书馆","借书","自习"], keywords: ["图书馆","借书","借阅","自习","数据库"]
+  },
+  {
+    question: "一节课多长时间？有晚自习吗？",
+    answer: "一般每节课 45 分钟或 50 分钟（不同专业略有差异），上午/下午/晚上均有排课。大一新生通常有晚自习要求，具体安排由各院系辅导员通知。",
+    category: "教学安排", tags: ["上课","课表","晚自习"], keywords: ["上课","课表","晚自习","时间"]
+  },
+  {
+    question: "学校快递站在哪？",
+    answer: "快递站在6号公寓下面。收到取件码后到快递站凭取件码取件即可。",
+    category: "快递", tags: ["快递","收货","驿站"], keywords: ["快递","驿站","取件","在哪"]
+  },
+  {
+    question: "快递收货地址怎么填？",
+    answer: "学校有菜鸟驿站等快递驿站，收货地址填写：山东省淄博市桓台县XX路（具体街道按校区）山东工业职业学院，邮编一般在252000左右，具体以学校通知为准。快递到了会发短信通知取件码。",
+    category: "快递物流", tags: ["快递","收货","地址"], keywords: ["快递","收货","地址","邮编"]
+  },
+  {
+    question: "大一可以考英语四级吗？",
+    answer: "大部分高校大一可以报名参加CET-4（大学英语四级）考试，具体以学校教务处当学期通知为准。部分学校会限制名额或按高考英语成绩排序，建议入学后关注辅导员和教务处通知。",
+    category: "英语四六级", tags: ["四级","英语","CET"], keywords: ["四级","英语","CET","报考"]
+  }
+];
+
+const SUGGESTIONS = [
+  { icon: "🏠", text: "宿舍是什么样的？" },
+  { icon: "💰", text: "学费怎么交？" },
+  { icon: "🎖️", text: "军训要准备什么？" },
+  { icon: "📋", text: "报到要带什么？" },
+  { icon: "🏅", text: "有哪些奖学金？" },
+  { icon: "🔄", text: "可以转专业吗？" }
+];
+
+/* ================================================
+   STATE
+   ================================================ */
+let state = {
+  messages: [],
+  history: JSON.parse(localStorage.getItem('sd_history') || '[]'),
+  favorites: JSON.parse(localStorage.getItem('sd_fav') || '[]'),
+  cat: null,
+  sending: false
+};
+
+function save() {
+  localStorage.setItem('sd_history', JSON.stringify(state.history));
+  localStorage.setItem('sd_fav', JSON.stringify(state.favorites));
+}
+
+/* ================================================
+   SIMPLE MATCHING ENGINE
+   ================================================ */
+const STOP = new Set(['的','了','吗','呢','是','在','我','你','他','她','我们','你们','怎么','如何','什么','为什么','可以','啊','呀','哪','个','有','没','不','和','与','及','请','问','一下']);
+
+function tokenize(q) {
+  q = String(q || '').toLowerCase();
+  const cjk = q.match(/[一-龥]+/g) || [];
+  const latin = q.match(/[a-z0-9]+/g) || [];
+  const terms = [...latin];
+  cjk.forEach(seg => {
+    if (seg.length === 1) terms.push(seg);
+    else for (let i = 0; i < seg.length - 1; i++) terms.push(seg.slice(i, i + 2));
+  });
+  return terms.filter(t => !STOP.has(t) && t.length > 0);
+}
+
+function match(q, topN = 5) {
+  const terms = tokenize(q);
+  const scored = FAQ_DATA.map(f => {
+    const text = `${f.question} ${f.answer} ${(f.tags||[]).join(' ')} ${(f.keywords||[]).join(' ')}`.toLowerCase();
+    let score = 0;
+    // 问题完全包含
+    if (text.includes(q)) score += 10;
+    // 词命中
+    terms.forEach(t => { if (text.includes(t)) score += 1; });
+    return { f, score };
+  }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
+  return scored.slice(0, topN).map(x => x.f);
+}
+
+function buildAnswer(q) {
+  const hits = match(q, 4);
+  if (!hits.length) {
+    return {
+      text: `抱歉，我暂时没有找到关于「${q}」的相关答案。\n\n建议：\n• 换个关键词试试（如「宿舍」「学费」「军训」）\n• 联系招生办或辅导员咨询\n• 查看随录取通知书寄送的《新生入学指南》`,
+      sources: []
+    };
+  }
+  const top = hits[0];
+  const ref = hits.map(h => `根据学校官方资料：${h.question} → ${h.answer}`).join('\n\n');
+  const answer = `${top.answer}\n\n---\n📌 相关问题：\n${hits.slice(1).map(h => `• ${h.question}`).join('\n')}`;
+  return {
+    text: answer,
+    sources: hits.map(h => ({ q: h.question }))
+  };
+}
+
+/* ================================================
+   CHAT RENDER
+   ================================================ */
+function renderWelcome() {
+  return `
+    <div class="welcome-card">
+      <div class="welcome-emoji">👋</div>
+      <div class="welcome-title">我是新生智能助手</div>
+      <div class="welcome-sub">关于报到、宿舍、学费、军训… 尽管问我</div>
+    </div>
+    <div class="suggestions">
+      ${SUGGESTIONS.map(s => `
+        <button class="sug-btn" onclick="askSuggestion('${s.text.replace(/'/g,"\\'")}')">
+          <span class="sug-icon">${s.icon}</span>
+          <span>${s.text}</span>
+        </button>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderMessages() {
+  return state.messages.map(m => `
+    <div class="msg msg-${m.role}">
+      <div class="bubble bubble-${m.role}">${escapeHtml(m.content)}</div>
+      ${m.sources && m.sources.length ? `
+        <div class="sources">
+          <div class="sources-title">📚 参考来源（点击查看详情）</div>
+          ${m.sources.map(s => `<div class="source-item" onclick="showSource('${escapeAttr(s.q)}')"><span class="src-dot">·</span><span>${escapeHtml(s.q)}</span></div>`).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+function scrollBottom() {
+  const el = document.getElementById('chatWrap');
+  setTimeout(() => el.scrollTop = el.scrollHeight, 50);
+}
+
+function render() {
+  const wrap = document.getElementById('chatContent');
+  if (!state.messages.length) {
+    wrap.innerHTML = renderWelcome();
+  } else {
+    wrap.innerHTML = renderMessages();
+    scrollBottom();
+  }
+}
+
+/* ================================================
+   SEND
+   ================================================ */
+async function send() {
+  const input = document.getElementById('chatInput');
+  const q = input.value.trim();
+  if (!q || state.sending) return;
+
+  state.messages.push({ role: 'user', content: q });
+  state.history.push({ q, time: Date.now() });
+  save();
+  input.value = '';
+  input.style.height = 'auto';
+  state.sending = true;
+  document.getElementById('sendBtn').disabled = true;
+  render();
+
+  // Bot thinking
+  const { text, sources } = buildAnswer(q);
+  state.messages.push({ role: 'bot', content: text, sources });
+  state.history.push({ q: text, time: Date.now(), isBot: true });
+  save();
+  state.sending = false;
+  document.getElementById('sendBtn').disabled = false;
+  render();
+  document.getElementById('chatInput').focus();
+}
+
+function askSuggestion(q) {
+  document.getElementById('chatInput').value = q;
+  send();
+}
+
+function onKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    send();
+  }
+}
+
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+/* ================================================
+   SIDEBAR CATEGORIES
+   ================================================ */
+function buildSidebar() {
+  const map = {};
+  FAQ_DATA.forEach(f => {
+    if (!map[f.category]) map[f.category] = 0;
+    map[f.category]++;
+  });
+  const cats = Object.entries(map).sort((a, b) => b[1] - a[1]);
+  const list = document.getElementById('catList');
+  list.innerHTML = `
+    <div class="sidebar-section-title">问题分类</div>
+    <div class="cat-item ${!state.cat ? 'active' : ''}" onclick="setCat(null)">
+      <span>全部问题</span>
+      <span class="cat-count">${FAQ_DATA.length}</span>
+    </div>
+    ${cats.map(([cat, cnt]) => `
+      <div class="cat-item ${state.cat === cat ? 'active' : ''}" onclick="setCat('${escapeAttr(cat)}')">
+        <span>${cat}</span>
+        <span class="cat-count">${cnt}</span>
+      </div>
+    `).join('')}
+  `;
+}
+
+function setCat(cat) {
+  state.cat = cat;
+  document.getElementById('topbarTitle').textContent = cat || '新生智能问答助手';
+  buildSidebar();
+  // Close on mobile
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+  }
+}
+
+/* ================================================
+   FAQ LIST PANEL
+   ================================================ */
+function openFaqPanel() {
+  renderFaqList(FAQ_DATA);
+  document.getElementById('faqPanel').classList.add('show');
+}
+
+function closeFaqPanel() {
+  document.getElementById('faqPanel').classList.remove('show');
+}
+
+function renderFaqList(list) {
+  const el = document.getElementById('faqList');
+  el.innerHTML = list.length ? list.map(f => `
+    <div class="faq-item" onclick="askSuggestion('${escapeAttr(f.question)}')">
+      <div class="faq-q">${escapeHtml(f.question)}</div>
+      <div class="faq-a">${escapeHtml(f.answer)}</div>
+      <div class="faq-cat">${escapeHtml(f.category)}</div>
+    </div>
+  `).join('') : '<div style="text-align:center;padding:60px 0;color:#8a93a3;font-size:14px">没有找到相关问题</div>';
+}
+
+function filterFaqList() {
+  const kw = document.getElementById('faqSearchInput').value.trim().toLowerCase();
+  if (!kw) { renderFaqList(FAQ_DATA); return; }
+  const filtered = FAQ_DATA.filter(f =>
+    f.question.toLowerCase().includes(kw) || f.answer.toLowerCase().includes(kw)
+  );
+  renderFaqList(filtered);
+}
+
+/* ================================================
+   ADMIN PANEL
+   ================================================ */
+function openAdmin() {
+  renderStats();
+  renderAdminFaqList();
+  document.getElementById('adminPanel').classList.add('show');
+}
+function closeAdmin() {
+  document.getElementById('adminPanel').classList.remove('show');
+}
+
+function renderStats() {
+  const el = document.getElementById('adminStats');
+  const today = state.history.filter(h => !h.isBot && Date.now() - h.time < 86400000).length;
+  el.innerHTML = `
+    <div class="stat-card"><div class="stat-num">${FAQ_DATA.length}</div><div class="stat-label">FAQ总数</div></div>
+    <div class="stat-card"><div class="stat-num">${state.history.filter(h => !h.isBot).length}</div><div class="stat-label">历史提问</div></div>
+    <div class="stat-card"><div class="stat-num">${today}</div><div class="stat-label">今日提问</div></div>
+    <div class="stat-card"><div class="stat-num">${state.favorites.length}</div><div class="stat-label">收藏数</div></div>
+  `;
+}
+
+function renderAdminFaqList() {
+  const tab = document.getElementById('adminFaqTab');
+  tab.innerHTML = `
+    <div class="admin-faq-list">
+      ${FAQ_DATA.map((f, i) => `
+        <div class="admin-faq-item">
+          <div class="admin-faq-q">[${f.category}] ${f.question}</div>
+          <button class="admin-faq-del" onclick="delFaq(${i})">删除</button>
+        </div>
+      `).join('')}
+    </div>
+    <div style="margin-top:20px">
+      <div class="form-group">
+        <label class="form-label">问题 *</label>
+        <input class="form-input" id="addQ" placeholder="例如：食堂几点开门？" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">答案 *</label>
+        <textarea class="form-textarea" id="addA" placeholder="完整答案内容…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">分类</label>
+        <input class="form-input" id="addCat" placeholder="例如：食堂餐饮" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">关键词（逗号分隔，用于提升召回）</label>
+        <input class="form-input" id="addKw" placeholder="例如：食堂,开门,吃饭" />
+      </div>
+      <button class="btn-primary" onclick="addFaq()">添加 FAQ</button>
+
+      <div style="margin-top:24px">
+        <div class="form-label">批量导入 JSON（粘贴下方）</div>
+        <textarea class="form-textarea" id="importJson" style="min-height:120px;font-size:12px;font-family:monospace" placeholder='[{"question":"问题","answer":"答案","category":"分类"}]'></textarea>
+        <button class="btn-primary" style="margin-top:8px;background:#2a8a5a" onclick="importJson()">导入 JSON</button>
+      </div>
+    </div>
+  `;
+}
+
+function switchAdminTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach((el, i) => {
+    el.classList.toggle('active', (i === {faq:0,add:1,import:2}[tab]));
+  });
+  // Scroll to correct section
+  const tabEl = document.getElementById('adminFaqTab');
+  if (tab === 'faq') tabEl.scrollTop = 0;
+  else if (tab === 'add') tabEl.scrollTop = tabEl.querySelector('.admin-faq-list')?.offsetTop || 0;
+}
+
+function addFaq() {
+  const q = document.getElementById('addQ').value.trim();
+  const a = document.getElementById('addA').value.trim();
+  const cat = document.getElementById('addCat').value.trim() || '未分类';
+  const kw = document.getElementById('addKw').value.split(',').map(s => s.trim()).filter(Boolean);
+  if (!q || !a) { toast('问题/答案不能为空'); return; }
+  FAQ_DATA.push({ question: q, answer: a, category: cat, tags: kw, keywords: kw });
+  toast(`已添加！共 ${FAQ_DATA.length} 条FAQ`);
+  buildSidebar();
+  renderAdminFaqList();
+  renderStats();
+  // Clear
+  document.getElementById('addQ').value = '';
+  document.getElementById('addA').value = '';
+  document.getElementById('addCat').value = '';
+  document.getElementById('addKw').value = '';
+}
+
+function delFaq(idx) {
+  if (!confirm('确认删除这条FAQ？')) return;
+  FAQ_DATA.splice(idx, 1);
+  toast('已删除');
+  buildSidebar();
+  renderAdminFaqList();
+  renderStats();
+}
+
+function importJson() {
+  const txt = document.getElementById('importJson').value.trim();
+  if (!txt) { toast('请粘贴JSON内容'); return; }
+  try {
+    const data = JSON.parse(txt);
+    if (!Array.isArray(data)) throw new Error('不是数组');
+    let ok = 0;
+    data.forEach(item => {
+      if (item.question && item.answer) {
+        FAQ_DATA.push({
+          question: item.question,
+          answer: item.answer,
+          category: item.category || '未分类',
+          tags: Array.isArray(item.tags) ? item.tags : [],
+          keywords: Array.isArray(item.keywords) ? item.keywords : []
+        });
+        ok++;
+      }
+    });
+    toast(`成功导入 ${ok} 条FAQ（共 ${FAQ_DATA.length} 条）`);
+    buildSidebar();
+    renderAdminFaqList();
+    renderStats();
+    document.getElementById('importJson').value = '';
+  } catch(e) {
+    toast('JSON格式错误，请检查');
+  }
+}
+
+/* ================================================
+   SOURCE / DETAIL
+   ================================================ */
+function showSource(q) {
+  const hit = FAQ_DATA.find(f => f.question === q);
+  if (hit) {
+    document.getElementById('chatInput').value = hit.question;
+    send();
+  }
+}
+
+/* ================================================
+   MOBILE SIDEBAR TOGGLE
+   ================================================ */
+document.getElementById('menuBtn').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+document.getElementById('sidebarOverlay').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('open');
+});
+
+/* ================================================
+   TOAST
+   ================================================ */
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+/* ================================================
+   SHARE
+   ================================================ */
+function openShare() {
+  const modal = document.getElementById('shareModal');
+  modal.classList.add('show');
+  const urlEl = document.getElementById('shareUrl');
+  // 生成一个本地 blob URL，用户部署后可替换为真实网址
+  const blobUrl = window.location.href;
+  urlEl.value = blobUrl;
+  // 生成二维码
+  const qrEl = document.getElementById('shareQr');
+  qrEl.innerHTML = '';
+  try {
+    new QRCode(qrEl, {
+      text: blobUrl,
+      width: 180, height: 180,
+      colorDark: '#1f2329',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch(e) {
+    qrEl.innerHTML = '<div style="font-size:12px;color:#8a93a3;padding:40px 0">请先部署到网上，再生成二维码</div>';
+  }
+}
+
+function closeShare() {
+  document.getElementById('shareModal').classList.remove('show');
+}
+
+/* WeChat popup */
+function showWechatPopup() {
+  document.getElementById('wechatPopup').classList.add('show');
+}
+function closeWechatPopup() {
+  document.getElementById('wechatPopup').classList.remove('show');
+  sessionStorage.setItem('wechat_dismissed_v2', '1');
+}
+
+function copyUrl() {
+  const el = document.getElementById('shareUrl');
+  el.select();
+  try { navigator.clipboard.writeText(el.value); } catch { document.execCommand('copy'); }
+  toast('链接已复制！');
+}
+
+/* ================================================
+   AUTO UPDATE SHARE URL (for deployed version)
+   ================================================ */
+(function() {
+  // 部署后自动更新分享 URL 提示
+  const isLocal = window.location.protocol === 'file:';
+  if (isLocal) {
+    // 本地文件模式：提示用户先部署
+    const origOpenShare = window.openShare;
+    window.openShare = function() {
+      const modal = document.getElementById('shareModal');
+      modal.classList.add('show');
+      document.getElementById('shareUrl').value = '请先【发布到网上】再分享，方法见下方教程';
+      document.getElementById('shareQr').innerHTML = '<div style="font-size:12px;color:#8a93a3;padding:20px 0;line-height:1.8">📌 本地文件暂不支持二维码<br>请先按下方说明发布到网上</div>';
+    };
+  }
+})();
+
+
+/* ================================================
+   UTILS
+   ================================================ */
+function escapeHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escapeAttr(s) {
+  return String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+}
+
+/* ================================================
+   INIT
+   ================================================ */
+buildSidebar();
+render();
+document.getElementById('chatInput').focus();
+
+/* 每次进入页面弹出微信二维码 */
+setTimeout(function() {
+  if (!sessionStorage.getItem('wechat_dismissed_v2')) {
+    showWechatPopup();
+  }
+}, 1500);
+
+/* 点击联系按钮时取消“已关闭”标记 */
+document.getElementById('contactFab').addEventListener('click', function() {
+  sessionStorage.removeItem('wechat_dismissed_v2');
+});
+</script>
+</body>
+</html>
